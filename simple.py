@@ -11,11 +11,15 @@ from qiskit_optimization.converters import QuadraticProgramToQubo
 graph = nx.DiGraph()
 
 # Add nodes and edges
-graph.add_edge(0, 1, weight=1.0)  # Top edge
+graph.add_edge(0, 1, weight=4.0)  # Top edge
+graph.add_edge(1, 0, weight=4.0)
 graph.add_edge(1, 2, weight=2.0)  # Right edge
-graph.add_edge(2, 3, weight=1.0)  # Bottom edge
+graph.add_edge(2, 1, weight=2.0)
+graph.add_edge(2, 3, weight=5.0)  # Bottom edge
+graph.add_edge(3, 2, weight=5.0)
 graph.add_edge(3, 0, weight=2.0)  # Left edge
-graph.add_edge(0, 2, weight=3.0)  # Diagonal
+graph.add_edge(0, 3, weight=2.0)
+
 
 # Define start and end nodes
 start_node = 0
