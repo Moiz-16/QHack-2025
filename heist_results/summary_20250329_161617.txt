@@ -1,0 +1,10 @@
+===== BANK HEIST QAOA EXPERIMENT SUMMARY =====
+Total runs: 50
+QAOA success rate: 100.00%
+QAOA required fallback: 60.00%
+QAOA required repair: 32.00%
+Path matched classical solution: 88.00%
+Average approximation ratio: 0.9493
+Median approximation ratio: 1.0000
+Median speedup factor: 2792238.4457
+(Higher speedup factor means classical is faster)
