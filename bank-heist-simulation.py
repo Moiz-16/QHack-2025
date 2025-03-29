@@ -86,7 +86,8 @@ def designate_bank_and_safehouse(graph, min_distance=3):
 # 3. Formulate and solve getaway path using QAOA (reusing your existing function)
 def solve_getaway_path_qaoa(graph, bank_node, safehouse_node):
     """Find optimal getaway path using QAOA with optimized parameters"""
-    print(f"Planning optimal getaway route from bank (location {bank_node}) to safehouse (location {safehouse_node})...")
+    print(
+        f"Planning optimal getaway route from bank (location {bank_node}) to safehouse (location {safehouse_node})...")
     # Reusing the existing function you already have
     return solve_shortest_path_qaoa(graph, bank_node, safehouse_node)
 
@@ -339,11 +340,14 @@ def repair_invalid_solution(graph, selected_edges, start_node, end_node):
         total_weight = sum(graph[path[i]][path[i + 1]]['weight'] for i in range(len(path) - 1))
         # Create the edges from the path
         path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
-        return path, total_weight, path_edges
+        # Set a flag or return special value to indicate we used classical fallback
+        # We'll mark this by returning a special flag as the third element
+        return path, total_weight, {'classical_fallback': True, 'path_edges': path_edges}
 
 
 # 4. Visualize the city and getaway paths
-def visualize_heist_scenario(graph, bank_node, safehouse_node, qaoa_path=None, selected_edges=None, classical_path=None):
+def visualize_heist_scenario(graph, bank_node, safehouse_node, qaoa_path=None, selected_edges=None,
+                             classical_path=None):
     """Visualize the city with bank, safehouse, and getaway paths"""
     fig, ax = plt.subplots(figsize=(14, 12))
 
@@ -361,9 +365,9 @@ def visualize_heist_scenario(graph, bank_node, safehouse_node, qaoa_path=None, s
 
     # Highlight bank and safehouse
     nx.draw_networkx_nodes(graph, pos, nodelist=[bank_node],
-                          node_color='red', node_size=500, ax=ax)
+                           node_color='red', node_size=500, ax=ax)
     nx.draw_networkx_nodes(graph, pos, nodelist=[safehouse_node],
-                          node_color='green', node_size=500, ax=ax)
+                           node_color='green', node_size=500, ax=ax)
 
     # Create legend handles
     legend_elements = [
@@ -374,9 +378,17 @@ def visualize_heist_scenario(graph, bank_node, safehouse_node, qaoa_path=None, s
 
     # Highlight QAOA selected routes
     if selected_edges:
-        nx.draw_networkx_edges(graph, pos, edgelist=selected_edges, width=1.5, edge_color='orange',
-                               style='dashed', alpha=0.7, ax=ax)
-        legend_elements.append(mpatches.Patch(color='orange', alpha=0.7, label='QAOA Considered Routes'))
+        if isinstance(selected_edges, dict) and selected_edges.get('classical_fallback', False):
+            # If we used classical fallback, use the path_edges
+            edges_to_draw = selected_edges.get('path_edges', [])
+            nx.draw_networkx_edges(graph, pos, edgelist=edges_to_draw, width=1.5, edge_color='orange',
+                                   style='dashed', alpha=0.7, ax=ax)
+            legend_elements.append(mpatches.Patch(color='orange', alpha=0.7, label='Classical Algorithm Routes'))
+        else:
+            # Regular QAOA routes
+            nx.draw_networkx_edges(graph, pos, edgelist=selected_edges, width=1.5, edge_color='orange',
+                                   style='dashed', alpha=0.7, ax=ax)
+            legend_elements.append(mpatches.Patch(color='orange', alpha=0.7, label='QAOA Considered Routes'))
 
     # Highlight QAOA optimal getaway path
     if qaoa_path and len(qaoa_path) > 1:
@@ -388,7 +400,7 @@ def visualize_heist_scenario(graph, bank_node, safehouse_node, qaoa_path=None, s
         intermediate_nodes = qaoa_path[1:-1] if len(qaoa_path) > 2 else []
         if intermediate_nodes:
             nx.draw_networkx_nodes(graph, pos, nodelist=intermediate_nodes,
-                                  node_color='plum', node_size=400, ax=ax)
+                                   node_color='plum', node_size=400, ax=ax)
             legend_elements.append(mpatches.Patch(color='plum', label='Getaway Route Stops'))
 
     # Highlight classical path for comparison if different from QAOA
@@ -429,7 +441,8 @@ def main():
             # Fallback to first and last node
             bank_node, safehouse_node = 0, num_nodes - 1
 
-        print(f"Bank heist scenario: Escape from bank at location {bank_node} to safehouse at location {safehouse_node}")
+        print(
+            f"Bank heist scenario: Escape from bank at location {bank_node} to safehouse at location {safehouse_node}")
 
         # 3. Find getaway path using QAOA
         qaoa_path, qaoa_difficulty, selected_edges = solve_getaway_path_qaoa(city_graph, bank_node, safehouse_node)
@@ -441,7 +454,7 @@ def main():
         if nx.has_path(city_graph, bank_node, safehouse_node):
             classical_path = nx.shortest_path(city_graph, bank_node, safehouse_node, weight='weight')
             classical_difficulty = sum(city_graph[classical_path[i]][classical_path[i + 1]]['weight']
-                                   for i in range(len(classical_path) - 1))
+                                       for i in range(len(classical_path) - 1))
             print(f"Classical solution: Getaway route = {classical_path}")
             print(f"Classical route difficulty = {classical_difficulty:.2f}")
         else:
@@ -450,20 +463,29 @@ def main():
         # 5. Compare results
         if qaoa_path and classical_path:
             print("\nComparing getaway methods:")
-            if abs(qaoa_difficulty - classical_difficulty) < 0.01:  # Allow for floating point differences
-                print("✓ QAOA found the optimal getaway route!")
-            else:
-                print(f"QAOA difficulty: {qaoa_difficulty:.2f}, Classical difficulty: {classical_difficulty:.2f}")
-                print(f"Difference: {abs(qaoa_difficulty - classical_difficulty):.2f}")
-                if qaoa_difficulty < classical_difficulty:
-                    print("⚠️ QAOA found a better route than the classical algorithm (unlikely, check for errors)")
+
+            # Check if we had to fall back to classical solution
+            used_classical_fallback = False
+            if isinstance(selected_edges, dict) and selected_edges.get('classical_fallback', False):
+                used_classical_fallback = True
+
+            if not used_classical_fallback:
+                if abs(qaoa_difficulty - classical_difficulty) < 0.01:  # Allow for floating point differences
+                    print("✓ QAOA found the optimal getaway route!")
                 else:
-                    approx_ratio = classical_difficulty / qaoa_difficulty if qaoa_difficulty > 0 else 0
-                    print(f"QAOA approximation ratio: {approx_ratio:.2f}")
-                    if approx_ratio < 0.8:
-                        print("QAOA solution is significantly worse than classical - police might catch you!")
+                    print(f"QAOA difficulty: {qaoa_difficulty:.2f}, Classical difficulty: {classical_difficulty:.2f}")
+                    print(f"Difference: {abs(qaoa_difficulty - classical_difficulty):.2f}")
+                    if qaoa_difficulty < classical_difficulty:
+                        print("⚠️ QAOA found a better route than the classical algorithm (unlikely, check for errors)")
                     else:
-                        print("QAOA solution is close to optimal - should be a clean getaway!")
+                        approx_ratio = classical_difficulty / qaoa_difficulty if qaoa_difficulty > 0 else 0
+                        print(f"QAOA approximation ratio: {approx_ratio:.2f}")
+                        if approx_ratio < 0.8:
+                            print("QAOA solution is significantly worse than classical - police might catch you!")
+                        else:
+                            print("QAOA solution is close to optimal - should be a clean getaway!")
+            else:
+                print("⚠️ QAOA failed to find a valid solution, using classical solution instead.")
 
         # 6. Generate unique filename based on time
         filename = f'bank_heist_simulation_{current_time}.png'
@@ -476,9 +498,14 @@ def main():
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         print(f"Bank heist visualization saved as '{filename}'")
 
+        # Check if we used a fallback solution
+        used_classical_fallback = isinstance(selected_edges, dict) and selected_edges.get('classical_fallback', False)
+
         # Success message
         if qaoa_path:
-            if classical_path and qaoa_path == classical_path:
+            if used_classical_fallback:
+                print("\nQAOA failed to find a valid getaway route. The classical algorithm was used instead.")
+            elif classical_path and qaoa_path == classical_path:
                 print("\nThe quantum getaway was successful! You found the optimal escape route!")
             elif classical_path:
                 if qaoa_difficulty <= classical_difficulty * 1.2:  # Within 20% of optimal
