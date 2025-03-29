@@ -1,2 +1,4 @@
 *.png
 __pycache__/random_graph.cpython-312.pyc
+/__pycache__
+/heist_results
