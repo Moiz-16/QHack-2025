@@ -166,7 +166,7 @@ def solve_shortest_path_qaoa(graph, start_node, end_node):
     ising, offset = qubo.to_ising()
 
     # Create QAOA circuit using QAOAAnsatz
-    qaoa_reps = 2  # Using p=2 for better approximation
+    qaoa_reps = 3  # Using p=2 for better approximation
     qaoa_ansatz = QAOAAnsatz(cost_operator=ising, reps=qaoa_reps)
 
     # Set up simulator with unlimited qubits and higher optimization level
