@@ -1,4 +1,4 @@
-# Quantum Bank Heist Simulation: Detailed Project Report
+# Quantum Bank Heist: QAOA Path Optimisation (QHack 2025)
 
 ## Executive Summary
 This project implements a quantum approach to solving the "Escaping the Police Chase" challenge (challenge 2) presented in the QHack 2025 hackathon organized by the University of Bristol Quantum Computing Society. The simulation leverages the Quantum Approximate Optimization Algorithm (QAOA) to identify optimal getaway routes for criminals attempting to reach a safehouse after a bank heist while evading law enforcement.
